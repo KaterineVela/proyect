@@ -1,45 +1,47 @@
 import streamlit as st
-import joblib
+import pandas as pd
 import numpy as np
+import joblib
 
-# Cargar modelo
+# Cargar el modelo entrenado
 modelo = joblib.load("modelo_ligero_nuevo.pkl")
 
-# Título
+# Título de la app
 st.title("Predicción de Enfermedad Cardíaca")
 
-# Formulario de entrada
-st.subheader("Ingrese los datos del paciente:")
+st.write("Introduce la información del paciente para predecir la probabilidad de enfermedad cardíaca.")
 
-campos = {
-    'HighBP': st.selectbox('¿Presión arterial alta?', [0, 1]),
-    'HighChol': st.selectbox('¿Colesterol alto?', [0, 1]),
-    'CholCheck': st.selectbox('¿Chequeo de colesterol?', [0, 1]),
-    'BMI': st.number_input('Índice de masa corporal (BMI)', min_value=10.0, max_value=60.0, value=25.0),
-    'Smoker': st.selectbox('¿Fumador?', [0, 1]),
-    'Stroke': st.selectbox('¿Ha sufrido un derrame?', [0, 1]),
-    'Diabetes': st.selectbox('¿Tiene diabetes?', [0, 1]),
-    'PhysActivity': st.selectbox('¿Realiza actividad física?', [0, 1]),
-    'Fruits': st.selectbox('¿Consume frutas regularmente?', [0, 1]),
-    'Veggies': st.selectbox('¿Consume verduras regularmente?', [0, 1]),
-    'HvyAlcoholConsump': st.selectbox('¿Consumo excesivo de alcohol?', [0, 1]),
-    'AnyHealthcare': st.selectbox('¿Tiene cobertura médica?', [0, 1]),
-    'NoDocbcCost': st.selectbox('¿Ha evitado al médico por costo?', [0, 1]),
-    'GenHlth': st.slider('Salud general (1=Muy buena, 5=Muy mala)', 1, 5, 3),
-    'MentHlth': st.slider('Días de mala salud mental en el último mes', 0, 30, 0),
-    'PhysHlth': st.slider('Días de mala salud física en el último mes', 0, 30, 0),
-    'DiffWalk': st.selectbox('¿Tiene dificultad para caminar?', [0, 1]),
-    'Sex': st.selectbox('Sexo (0=Femenino, 1=Masculino)', [0, 1]),
-    'Age': st.slider('Grupo de edad (1=18-24, ..., 13=80+)', 1, 13, 5),
-    'Education': st.slider('Nivel educativo (1=menos a 9 grado, 6=graduado universitario)', 1, 6, 3),
-    'Income': st.slider('Nivel de ingreso (1=menos de $10k, 8=mayor a $75k)', 1, 8, 4)
+# Crear los inputs del usuario
+gender = st.selectbox("Género", ["Femenino", "Masculino"])
+age_category = st.selectbox("Rango de edad", [
+    "18-24", "25-29", "30-34", "35-39", "40-44", "45-49",
+    "50-54", "55-59", "60-64", "65-69", "70-74", "75-79", "80 o más"
+])
+smoking = st.selectbox("¿Fuma?", ["Sí", "No"])
+bmi = st.slider("IMC (Índice de Masa Corporal)", 10.0, 50.0, 25.0)
+physical_activity = st.selectbox("Actividad física", ["Sí", "No"])
+sleep_time = st.slider("Horas de sueño diarias", 0, 24, 7)
+
+# Procesar entradas
+gender_val = 1 if gender == "Masculino" else 0
+smoking_val = 1 if smoking == "Sí" else 0
+activity_val = 1 if physical_activity == "Sí" else 0
+
+# Mapear edad a número
+edad_map = {
+    "18-24": 0, "25-29": 1, "30-34": 2, "35-39": 3, "40-44": 4,
+    "45-49": 5, "50-54": 6, "55-59": 7, "60-64": 8, "65-69": 9,
+    "70-74": 10, "75-79": 11, "80 o más": 12
 }
+age_val = edad_map[age_category]
 
-# Botón de predicción
+# Construir el array de entrada en el mismo orden del modelo
+input_data = np.array([[gender_val, age_val, smoking_val, bmi, activity_val, sleep_time]])
+
+# Botón para predecir
 if st.button("Predecir"):
-    valores = np.array([list(campos.values())])
-    resultado = modelo.predict(valores)[0]
-    if resultado == 1:
-        st.error("⚠️ Riesgo de enfermedad cardíaca detectado.")
+    prediccion = modelo.predict(input_data)[0]
+    if prediccion == 1:
+        st.error("⚠️ Riesgo alto de enfermedad cardíaca.")
     else:
         st.success("✅ Bajo riesgo de enfermedad cardíaca.")
